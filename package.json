@@ -1,7 +1,7 @@
 {
-  "name": "se-iteration-1",
+  "name": "se-individual-iteration",
   "version": "1.0.0",
-  "description": "Software Engineering Iteration 1 Project",
+  "description": "Software Engineering Individual Iteration Project",
   "main": "backend/app.js",
   "scripts": {
     "start": "node backend/app.js",

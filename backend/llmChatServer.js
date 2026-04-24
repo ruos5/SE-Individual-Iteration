@@ -8,13 +8,29 @@ let conversations = [];
 let convId = 1;
 
 // Call Ollama
-const callOllama = async (message) => {
-  const response = await axios.post("http://localhost:11434/api/generate", {
-    model: "llama2",
-    prompt: message,
-    stream: false,
-  });
-  return response.data.response;
+const callOllamaMulti = async (message) => {
+  const models = ["llama2", "mistral", "phi"]; // add/remove models here
+
+  try {
+    const responses = await Promise.all(
+      models.map(async (model) => {
+        const res = await axios.post("http://localhost:11434/api/generate", {
+          model,
+          prompt: message,
+          stream: false,
+        });
+
+        return {
+          model,
+          response: res.data.response,
+        };
+      })
+    );
+
+    return responses;
+  } catch (error) {
+    throw error;
+  }
 };
 
 // New conversation
@@ -36,11 +52,20 @@ app.post("/api/llm/chat", async (req, res) => {
   if (!conv) return res.status(404).json({ message: "Conversation not found." });
 
   try {
-    const botResponse = await callOllama(message);
+    const botResponses = await callOllamaMulti(message);
     conv.messages.push({ role: "user", content: message });
-    conv.messages.push({ role: "bot", content: botResponse });
+    botResponses.forEach(res => {
+      conv.messages.push({
+        role: "bot",
+        model: res.model,
+        content: res.response
+      });
+    });
 
-    res.status(200).json({ userMessage: message, botResponse });
+    res.status(200).json({
+      userMessage: message,
+      botResponses
+    });
   } catch (error) {
     res.status(500).json({ message: "Error processing message." });
   }
